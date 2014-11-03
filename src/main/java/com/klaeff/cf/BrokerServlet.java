@@ -1,6 +1,11 @@
 package com.klaeff.cf;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.MessageFormat;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,14 +41,16 @@ public class BrokerServlet extends HttpServlet {
 
 			switch (r.getResourceType()) {
 			case Catalog:
+				String catalog = createCatalog(req.getServerName(),req.getServerPort());
+
+				resp.getWriter().print(catalog);
+				resp.setStatus(200);
+
 				break;
 			default:
 				throw new MethodNotAllowedException("GET");
 			}
 
-			System.out.println(req.getPathInfo());
-			resp.getWriter().print("ok");
-			resp.setStatus(200);
 		} catch (NotFoundException e) {
 			resp.getWriter().print("404 - not found - " + req.getPathInfo());
 			resp.setStatus(404);
@@ -51,6 +58,34 @@ public class BrokerServlet extends HttpServlet {
 			resp.getWriter().print("405 - method not allowed - GET");
 			resp.setStatus(405);
 		}
+	}
+
+	public static String createCatalog(String host, int port)
+			throws IOException {
+		String template = fromStream(BrokerServlet.class
+				.getResourceAsStream("/catalog.json"));
+
+		Object serviceGuid = UUID.randomUUID();
+		Object planSmallGuid = UUID.randomUUID();
+		Object planLargeGuid = UUID.randomUUID();
+		Object dashboarUrl = MessageFormat.format(
+				"http://{0}:{1,number,#}/service-broker/", host, port);
+		String catalog = String.format(template, serviceGuid, planSmallGuid,
+				planLargeGuid, dashboarUrl);
+
+		return catalog;
+	}
+
+	public static String fromStream(InputStream in) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		StringBuilder out = new StringBuilder();
+		String newLine = System.getProperty("line.separator");
+		String line;
+		while ((line = reader.readLine()) != null) {
+			out.append(line);
+			out.append(newLine);
+		}
+		return out.toString();
 	}
 
 	public static void handlePut(HttpServletRequest req,

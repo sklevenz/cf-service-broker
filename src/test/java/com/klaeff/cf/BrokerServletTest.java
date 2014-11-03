@@ -3,6 +3,7 @@ package com.klaeff.cf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
@@ -63,70 +64,65 @@ public class BrokerServletTest {
 		assertEquals("1234abcd", r1.getInstanceId());
 		assertEquals(ResourceType.Binding, r1.getResourceType());
 	}
-	
+
 	@Test
 	public void getRequest() throws Exception {
-		handleGetRequest("/catalog", 200);
-		handleGetRequest("/abc", 404);
-		handleGetRequest("/service_instances/123", 405);
-		handleGetRequest("/service_instances/123/service_bindings/456", 405);
+		handleRequest("/catalog", 200, "get");
+		handleRequest("/abc", 404, "get");
+		handleRequest("/service_instances/123", 405, "get");
+		handleRequest("/service_instances/123/service_bindings/456", 405, "get");
 	}
 
 	@Test
 	public void putRequest() throws Exception {
-		handlePutRequest("/catalog", 405);
-		handlePutRequest("/abc", 404);
-		handlePutRequest("/service_instances/123", 200);
-		handlePutRequest("/service_instances/123/service_bindings/456", 200);
+		handleRequest("/catalog", 405, "put");
+		handleRequest("/abc", 404, "put");
+		handleRequest("/service_instances/123", 200, "put");
+		handleRequest("/service_instances/123/service_bindings/456", 200, "put");
 	}
 
 	@Test
+	public void testCatalog() throws Exception {
+		String catalog = BrokerServlet.createCatalog("localhost", 8080);
+
+		System.out.println(catalog);
+		
+		assertNotNull(catalog);
+		assertTrue(catalog.contains("http://localhost:8080/service-broker/"));
+	}
+	
+	@Test
 	public void deleteRequest() throws Exception {
-		handleDeleteRequest("/catalog", 405);
-		handleDeleteRequest("/abc", 404);
-		handleDeleteRequest("/service_instances/123", 200);
-		handleDeleteRequest("/service_instances/123/service_bindings/456", 200);
+		handleRequest("/catalog", 405, "delete");
+		handleRequest("/abc", 404, "delete");
+		handleRequest("/service_instances/123", 200, "delete");
+		handleRequest("/service_instances/123/service_bindings/456", 200,
+				"delete");
 	}
 
-	private void handleGetRequest(String pathInfo, int status) throws IOException {
+	private void handleRequest(String pathInfo, int status, String method)
+			throws IOException {
 		HttpServletRequest req = mock(HttpServletRequest.class);
-		HttpServletResponse resp= mock(HttpServletResponse.class);
+		HttpServletResponse resp = mock(HttpServletResponse.class);
 
 		when(req.getPathInfo()).thenReturn(pathInfo);
-		when(resp.getWriter()).thenReturn(new PrintWriter(new NullOutputStream()));
-		
-		BrokerServlet.handleGet(req, resp);
-		
-		verify(resp, times(1)).setStatus(status);
-	}	
-	
-	private void handlePutRequest(String pathInfo, int status) throws IOException {
-		HttpServletRequest req = mock(HttpServletRequest.class);
-		HttpServletResponse resp= mock(HttpServletResponse.class);
+		when(resp.getWriter()).thenReturn(
+				new PrintWriter(new NullOutputStream()));
 
-		when(req.getPathInfo()).thenReturn(pathInfo);
-		when(resp.getWriter()).thenReturn(new PrintWriter(new NullOutputStream()));
-		
-		BrokerServlet.handlePut(req, resp);
-		
-		verify(resp, times(1)).setStatus(status);
-	}	
-	
-	private void handleDeleteRequest(String pathInfo, int status) throws IOException {
-		HttpServletRequest req = mock(HttpServletRequest.class);
-		HttpServletResponse resp= mock(HttpServletResponse.class);
-
-		when(req.getPathInfo()).thenReturn(pathInfo);
-		when(resp.getWriter()).thenReturn(new PrintWriter(new NullOutputStream()));
-		
-		BrokerServlet.handleDelete(req, resp);
-		
-		verify(resp, times(1)).setStatus(status);
-	}	
-	
-	public class NullOutputStream extends OutputStream {
-		  @Override
-		  public void write(int b) throws IOException {
-		  }
+		if ("get".equalsIgnoreCase(method)) {
+			BrokerServlet.handleGet(req, resp);
+		} else if ("put".equalsIgnoreCase(method)) {
+			BrokerServlet.handlePut(req, resp);
+		} else if ("delete".equalsIgnoreCase(method)) {
+			BrokerServlet.handleDelete(req, resp);
 		}
+
+		verify(resp, times(1)).setStatus(status);
+	}
+
+	public class NullOutputStream extends OutputStream {
+		@Override
+		public void write(int b) throws IOException {
+		}
+	}
 }
