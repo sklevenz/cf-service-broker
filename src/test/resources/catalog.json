@@ -10,7 +10,7 @@
   "dashboardClient": {
     "id": "client-id-1",
     "secret": "secret-1",
-    "redirectUrl": "http//localhost:8080/service-broker/"
+    "redirectUrl": "http://localhost:8080/service-broker/"
   },
   "plans": [
     {
@@ -112,10 +112,10 @@
   ],
   "metadata": {
     "displayName": "mock service",
-    "imageUrl": "http//localhost:8080/service-broker/img/service.jpg",
+    "imageUrl": "http://localhost:8080/service-broker/img/service.jpg",
     "longDescription": "This is a mock service provider",
     "providerDisplayName": "mock service provider",
-    "documentationUrl": "http//localhost:8080/service-broker/",
-    "supportUrl": "http//localhost:8080/service-broker/"
+    "documentationUrl": "http://localhost:8080/service-broker/",
+    "supportUrl": "http://localhost:8080/service-broker/"
   }
 }

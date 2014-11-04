@@ -20,6 +20,7 @@ public class ServiceUriSerializer implements JsonSerializer<ServiceUri> {
 		this.port = port;
 	}
 
+	@Override
 	public JsonElement serialize(ServiceUri uri, Type typeOfSrc,
 			JsonSerializationContext context) {
 

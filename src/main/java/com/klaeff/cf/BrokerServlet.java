@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Hashtable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -12,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.klaeff.cf.service.ServiceBinding;
+import com.klaeff.cf.service.ServiceInstance;
 import com.klaeff.cf.service.ServiceUri;
 import com.klaeff.cf.service.ServiceUriSerializer;
 import com.klaeff.cf.service.Services;
@@ -21,7 +24,9 @@ public class BrokerServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static Services services =ServicesFactory.create();
+	private static Services services = ServicesFactory.create();
+	private static Hashtable<String, ServiceInstance> instanceRegistry = new Hashtable<String, ServiceInstance>();
+	private static Hashtable<String, ServiceBinding> bindingRegistry = new Hashtable<String, ServiceBinding>();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -82,10 +87,48 @@ public class BrokerServlet extends HttpServlet {
 
 			switch (r.getResourceType()) {
 			case Instance:
-				resp.setStatus(200);
+				String instanceBody = fromStream(req.getInputStream());
+
+				if (instanceRegistry.containsKey(r.getInstanceId())) {
+					ServiceInstance si1 = instanceRegistry.get(r
+							.getInstanceId());
+					ServiceInstance si2 = deserializeInstance(instanceBody);
+
+					if (si1.equals(si2)) {
+						resp.getWriter().print("{}");
+						resp.setStatus(200); // ok
+					} else {
+						resp.getWriter().print("{}");
+						resp.setStatus(409); // conflict
+					}
+				} else {
+					ServiceInstance si = deserializeInstance(instanceBody);
+					instanceRegistry.put(r.getInstanceId(), si);
+					resp.setStatus(201); // created
+				}
+
 				break;
 			case Binding:
-				resp.setStatus(200);
+				String bindingBody = fromStream(req.getInputStream());
+
+				if (bindingRegistry.containsKey(r.getBindingId())) {
+					ServiceBinding sb1 = bindingRegistry.get(r
+							.getBindingId());
+					ServiceBinding sb2 = deserializeBinding(bindingBody);
+
+					if (sb1.equals(sb2)) {
+						resp.getWriter().print("{}");
+						resp.setStatus(200); // ok
+					} else {
+						resp.getWriter().print("{}");
+						resp.setStatus(409); // conflict
+					}
+				} else {
+					ServiceBinding sb = deserializeBinding(bindingBody);
+					bindingRegistry.put(r.getBindingId(), sb);
+					resp.setStatus(201); // created
+				}
+
 				break;
 			default:
 				throw new MethodNotAllowedException("PUT");
@@ -97,6 +140,16 @@ public class BrokerServlet extends HttpServlet {
 			resp.getWriter().print("405 - method not allowed - PUT");
 			resp.setStatus(405);
 		}
+	}
+
+	private static ServiceBinding deserializeBinding(String body) {
+		Gson gson = new GsonBuilder().create();
+		return gson.fromJson(body, ServiceBinding.class);
+	}
+
+	private static ServiceInstance deserializeInstance(String body) {
+		Gson gson = new GsonBuilder().create();
+		return gson.fromJson(body, ServiceInstance.class);
 	}
 
 	public static void handleDelete(HttpServletRequest req,

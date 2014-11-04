@@ -1,0 +1,6 @@
+{
+  "service_id":        "service-guid-here",
+  "plan_id":           "plan-guid-here",
+  "organization_guid": "org-guid-here",
+  "space_guid":        "space-guid-here"
+}

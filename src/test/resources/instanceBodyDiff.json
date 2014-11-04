@@ -1,0 +1,6 @@
+{
+  "service_id":        "1",
+  "plan_id":           "2",
+  "organization_guid": "3",
+  "space_guid":        "4"
+}
