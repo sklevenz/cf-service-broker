@@ -4,17 +4,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.MessageFormat;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.klaeff.cf.service.ServiceUri;
+import com.klaeff.cf.service.ServiceUriSerializer;
+import com.klaeff.cf.service.Services;
+import com.klaeff.cf.service.ServicesFactory;
+
 public class BrokerServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
+
+	private static Services services =ServicesFactory.create();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -41,7 +48,8 @@ public class BrokerServlet extends HttpServlet {
 
 			switch (r.getResourceType()) {
 			case Catalog:
-				String catalog = createCatalog(req.getServerName(),req.getServerPort());
+				String catalog = createCatalog(req.getScheme(),
+						req.getServerName(), req.getServerPort());
 
 				resp.getWriter().print(catalog);
 				resp.setStatus(200);
@@ -60,32 +68,11 @@ public class BrokerServlet extends HttpServlet {
 		}
 	}
 
-	public static String createCatalog(String host, int port)
+	public static String createCatalog(String scheme, String host, int port)
 			throws IOException {
-		String template = fromStream(BrokerServlet.class
-				.getResourceAsStream("/catalog.json"));
-
-		Object serviceGuid = UUID.randomUUID();
-		Object planSmallGuid = UUID.randomUUID();
-		Object planLargeGuid = UUID.randomUUID();
-		Object dashboarUrl = MessageFormat.format(
-				"http://{0}:{1,number,#}/service-broker/", host, port);
-		String catalog = String.format(template, serviceGuid, planSmallGuid,
-				planLargeGuid, dashboarUrl);
+		String catalog = toJson(scheme, host, port);
 
 		return catalog;
-	}
-
-	public static String fromStream(InputStream in) throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-		StringBuilder out = new StringBuilder();
-		String newLine = System.getProperty("line.separator");
-		String line;
-		while ((line = reader.readLine()) != null) {
-			out.append(line);
-			out.append(newLine);
-		}
-		return out.toString();
 	}
 
 	public static void handlePut(HttpServletRequest req,
@@ -171,4 +158,29 @@ public class BrokerServlet extends HttpServlet {
 
 		return result;
 	}
+
+	public static String toJson(String scheme, String host, int port)
+			throws IOException {
+
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapter(ServiceUri.class,
+				new ServiceUriSerializer(scheme, host, port));
+		Gson gson = gsonBuilder.setPrettyPrinting().create();
+		String json = gson.toJson(services);
+		return json;
+
+	}
+
+	public static String fromStream(InputStream in) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		StringBuilder out = new StringBuilder();
+		String newLine = System.getProperty("line.separator");
+		String line;
+		while ((line = reader.readLine()) != null) {
+			out.append(line);
+			out.append(newLine);
+		}
+		return out.toString();
+	}
+
 }

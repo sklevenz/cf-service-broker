@@ -1,0 +1,121 @@
+{
+  "id": "6c3bbd71-7e03-481f-be78-727f7ef70698",
+  "name": "mock service",
+  "description": "This broker is for a mocking service which records CF broker requests in memory.",
+  "bindable": true,
+  "tags": [
+    "tag1",
+    "tag2"
+  ],
+  "dashboardClient": {
+    "id": "client-id-1",
+    "secret": "secret-1",
+    "redirectUrl": "http//localhost:8080/service-broker/"
+  },
+  "plans": [
+    {
+      "id": "a4c20f55-80ac-4686-853a-b58b9cd4ef39",
+      "name": "small",
+      "description": "A small plan",
+      "metadata": {
+        "bullets": [
+          "10GB",
+          "20GB"
+        ],
+        "costs": [
+          {
+            "unit": "1GB of messages over 20GB",
+            "amounts": [
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              },
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              }
+            ]
+          },
+          {
+            "unit": "1GB of messages over 20GB",
+            "amounts": [
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              },
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              }
+            ]
+          }
+        ],
+        "displayName": "service plan costs"
+      }
+    },
+    {
+      "id": "49df79a2-7884-4de3-898c-cee950edecf1",
+      "name": "large",
+      "description": "A large plan",
+      "metadata": {
+        "bullets": [
+          "10GB",
+          "20GB"
+        ],
+        "costs": [
+          {
+            "unit": "1GB of messages over 20GB",
+            "amounts": [
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              },
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              }
+            ]
+          },
+          {
+            "unit": "1GB of messages over 20GB",
+            "amounts": [
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              },
+              {
+                "amount": {
+                  "eur": "10.12",
+                  "usd": "12.54"
+                }
+              }
+            ]
+          }
+        ],
+        "displayName": "service plan costs"
+      }
+    }
+  ],
+  "metadata": {
+    "displayName": "mock service",
+    "imageUrl": "http//localhost:8080/service-broker/img/service.jpg",
+    "longDescription": "This is a mock service provider",
+    "providerDisplayName": "mock service provider",
+    "documentationUrl": "http//localhost:8080/service-broker/",
+    "supportUrl": "http//localhost:8080/service-broker/"
+  }
+}
