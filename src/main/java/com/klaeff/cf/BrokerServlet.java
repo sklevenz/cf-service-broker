@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.klaeff.cf.service.ServiceBinding;
 import com.klaeff.cf.service.ServiceInstance;
 import com.klaeff.cf.service.ServiceUri;
@@ -28,7 +29,7 @@ public class BrokerServlet extends HttpServlet {
 	private static Services services = ServicesFactory.create();
 	private static Hashtable<String, ServiceInstance> instanceRegistry = new Hashtable<String, ServiceInstance>();
 	private static Hashtable<String, ServiceBinding> bindingRegistry = new Hashtable<String, ServiceBinding>();
-	
+
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
@@ -66,10 +67,10 @@ public class BrokerServlet extends HttpServlet {
 			}
 
 		} catch (NotFoundException e) {
-			resp.getWriter().print("404 - not found - " + req.getPathInfo());
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			resp.getWriter().print("405 - method not allowed - GET");
+			errorResponseBody(req, resp, "method not allowed - GET" , 405);
 			resp.setStatus(405);
 		}
 	}
@@ -130,6 +131,7 @@ public class BrokerServlet extends HttpServlet {
 						if (sb1.equals(sb2)) {
 							resp.setStatus(200); // ok
 						} else {
+							errorResponseBody(req, resp, "conflict" , 409);
 							resp.setStatus(409); // conflict
 						}
 					} else {
@@ -147,10 +149,10 @@ public class BrokerServlet extends HttpServlet {
 				throw new MethodNotAllowedException("PUT");
 			}
 		} catch (NotFoundException e) {
-			resp.getWriter().print("404 - not found - " + req.getPathInfo());
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			resp.getWriter().print("405 - method not allowed - PUT");
+			errorResponseBody(req, resp, "method not allowed - GET" , 405);
 			resp.setStatus(405);
 		}
 	}
@@ -182,16 +184,18 @@ public class BrokerServlet extends HttpServlet {
 			case Instance:
 				if (instanceRegistry.containsKey(r.getInstanceId())) {
 					instanceRegistry.remove(r.getInstanceId());
-					resp.setStatus(200);					
-				}else{
+					resp.setStatus(200);
+				} else {
+					errorResponseBody(req, resp, "gone" , 410);
 					resp.setStatus(410);
 				}
 				break;
 			case Binding:
 				if (bindingRegistry.containsKey(r.getBindingId())) {
 					bindingRegistry.remove(r.getBindingId());
-					resp.setStatus(200);					
-				}else{
+					resp.setStatus(200);
+				} else {
+					errorResponseBody(req, resp, "gone" , 410);
 					resp.setStatus(410);
 				}
 				break;
@@ -199,10 +203,10 @@ public class BrokerServlet extends HttpServlet {
 				throw new MethodNotAllowedException("DELETE");
 			}
 		} catch (NotFoundException e) {
-			resp.getWriter().print("404 - not found - " + req.getPathInfo());
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			resp.getWriter().print("405 - method not allowed - DELETE");
+			errorResponseBody(req, resp, "method not allowed - GET" , 405);
 			resp.setStatus(405);
 		}
 	}
@@ -270,18 +274,15 @@ public class BrokerServlet extends HttpServlet {
 	public static boolean containsInstance(String instanceId) {
 		return instanceRegistry.containsKey(instanceId);
 	}
-	
 
 	public static boolean containsBinding(String bindingId) {
 		return bindingRegistry.containsKey(bindingId);
 	}
 
-	private static String registryAsJson(Hashtable<?,?> tab) {
+	private static String registryAsJson(Hashtable<?, ?> tab) {
 		GsonBuilder gsonBuilder = new GsonBuilder();
 		Gson gson = gsonBuilder.setPrettyPrinting().create();
 		String json = gson.toJson(tab);
-		System.out.println(json);
-		
 		return json;
 	}
 
@@ -291,6 +292,19 @@ public class BrokerServlet extends HttpServlet {
 
 	public static String instanceRegistryAsJson() {
 		return registryAsJson(instanceRegistry);
+	}
+
+	private static void errorResponseBody(HttpServletRequest req,
+			HttpServletResponse resp, String msg, int code) throws IOException {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		Gson gson = gsonBuilder.setPrettyPrinting().create();
+
+		JsonObject error = new JsonObject();
+		error.addProperty("description", msg + " (" + code + ")");
+
+		String json = gson.toJson(error);
+
+		resp.getWriter().print(json);
 	}
 
 }
