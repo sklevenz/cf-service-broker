@@ -67,10 +67,11 @@ public class BrokerServlet extends HttpServlet {
 			}
 
 		} catch (NotFoundException e) {
-			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(),
+					404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			errorResponseBody(req, resp, "method not allowed - GET" , 405);
+			errorResponseBody(req, resp, "method not allowed - GET", 405);
 			resp.setStatus(405);
 		}
 	}
@@ -130,13 +131,15 @@ public class BrokerServlet extends HttpServlet {
 
 						if (sb1.equals(sb2)) {
 							resp.setStatus(200); // ok
+							resp.getWriter().print(bindingCredentials());
 						} else {
-							errorResponseBody(req, resp, "conflict" , 409);
+							errorResponseBody(req, resp, "conflict", 409);
 							resp.setStatus(409); // conflict
 						}
 					} else {
 						ServiceBinding sb = deserializeBinding(bindingBody);
 						bindingRegistry.put(r.getBindingId(), sb);
+						resp.getWriter().print(bindingCredentials());
 						resp.setStatus(201); // created
 					}
 				} else {
@@ -149,12 +152,33 @@ public class BrokerServlet extends HttpServlet {
 				throw new MethodNotAllowedException("PUT");
 			}
 		} catch (NotFoundException e) {
-			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(),
+					404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			errorResponseBody(req, resp, "method not allowed - GET" , 405);
+			errorResponseBody(req, resp, "method not allowed - GET", 405);
 			resp.setStatus(405);
 		}
+	}
+
+	private static String bindingCredentials() {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		Gson gson = gsonBuilder.setPrettyPrinting().create();
+
+		Hashtable<String, String> cred = new Hashtable<String, String>();
+
+		cred.put("uri", "mysql://mysqluser:pass@mysqlhost:3306/dbname");
+		cred.put("username", "mysqluser");
+		cred.put("password", "pass");
+		cred.put("host", "mysqlhost");
+		cred.put("port", "3306");
+		cred.put("database", "dbname");
+
+		JsonObject c = new JsonObject();
+		c.addProperty("credentials", gson.toJson(cred));
+		String json = gson.toJson(c);
+
+		return json;
 	}
 
 	private static String creatDashboardUrlJson(String scheme, String host,
@@ -186,16 +210,17 @@ public class BrokerServlet extends HttpServlet {
 					instanceRegistry.remove(r.getInstanceId());
 					resp.setStatus(200);
 				} else {
-					errorResponseBody(req, resp, "gone" , 410);
+					errorResponseBody(req, resp, "gone", 410);
 					resp.setStatus(410);
 				}
 				break;
 			case Binding:
 				if (bindingRegistry.containsKey(r.getBindingId())) {
 					bindingRegistry.remove(r.getBindingId());
+					resp.getWriter().print("{}");
 					resp.setStatus(200);
 				} else {
-					errorResponseBody(req, resp, "gone" , 410);
+					errorResponseBody(req, resp, "gone", 410);
 					resp.setStatus(410);
 				}
 				break;
@@ -203,10 +228,11 @@ public class BrokerServlet extends HttpServlet {
 				throw new MethodNotAllowedException("DELETE");
 			}
 		} catch (NotFoundException e) {
-			errorResponseBody(req, resp, "not found - " + req.getPathInfo(), 404);
+			errorResponseBody(req, resp, "not found - " + req.getPathInfo(),
+					404);
 			resp.setStatus(404);
 		} catch (MethodNotAllowedException e) {
-			errorResponseBody(req, resp, "method not allowed - GET" , 405);
+			errorResponseBody(req, resp, "method not allowed - GET", 405);
 			resp.setStatus(405);
 		}
 	}

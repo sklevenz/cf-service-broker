@@ -7,7 +7,7 @@ public class ServiceDashboardClient {
 
 	private String id = "client-id-1";
 	private String secret = "secret-1";
-	@SerializedName("redirect_url")
+	@SerializedName("redirect_uri")
 	private ServiceUri redirectUrl =  new ServiceUri("{0}://{1}:{2,number,#}/service-broker/");
 
 	public String getId() {
