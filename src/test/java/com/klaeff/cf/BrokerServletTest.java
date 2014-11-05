@@ -1,6 +1,6 @@
 package com.klaeff.cf;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -19,7 +19,6 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.klaeff.cf.service.Service;
@@ -80,21 +79,33 @@ public class BrokerServletTest {
 		handleRequest("/catalog", 200, "get", null);
 		handleRequest("/abc", 404, "get", null);
 		handleRequest("/service_instances/123", 405, "get", null);
-		handleRequest("/service_instances/123/service_bindings/456", 405, "get", null);
+		handleRequest("/service_instances/123/service_bindings/456", 405,
+				"get", null);
 	}
 
 	@Test
 	public void putRequest() throws Exception {
 		handleRequest("/catalog", 405, "put", null);
 		handleRequest("/abc", 404, "put", null);
-		
-		handleRequest("/service_instances/123", 201, "put", "/instanceBody.json");
-		handleRequest("/service_instances/123", 200, "put", "/instanceBody.json");
-		handleRequest("/service_instances/123", 409, "put", "/instanceBodyDiff.json");
-		
-		handleRequest("/service_instances/123/service_bindings/456", 201, "put", "/bindingBody.json");
-		handleRequest("/service_instances/123/service_bindings/456", 200, "put", "/bindingBody.json");
-		handleRequest("/service_instances/123/service_bindings/456", 409, "put", "/bindingBodyDiff.json");
+
+		handleRequest("/service_instances/123", 201, "put",
+				"/instanceBody.json");
+		assertTrue(BrokerServlet.containsInstance("123"));
+		handleRequest("/service_instances/123", 200, "put",
+				"/instanceBody.json");
+		handleRequest("/service_instances/123", 409, "put",
+				"/instanceBodyDiff.json");
+
+		handleRequest("/service_instances/123/service_bindings/456", 201,
+				"put", "/bindingBody.json");
+		assertTrue(BrokerServlet.containsBinding("456"));
+		handleRequest("/service_instances/123/service_bindings/456", 200,
+				"put", "/bindingBody.json");
+		handleRequest("/service_instances/123/service_bindings/456", 409,
+				"put", "/bindingBodyDiff.json");
+
+		handleRequest("/service_instances/xxx/service_bindings/456", 404,
+				"put", "/bindingBody.json");
 	}
 
 	@Test
@@ -102,7 +113,6 @@ public class BrokerServletTest {
 		String catalog = BrokerServlet.createCatalog("http", "localhost", 8080);
 
 		assertNotNull(catalog);
-		System.out.println(catalog);
 		assertTrue(catalog.contains("http://localhost:8080/service-broker/"));
 	}
 
@@ -113,6 +123,28 @@ public class BrokerServletTest {
 		handleRequest("/service_instances/123", 200, "delete", null);
 		handleRequest("/service_instances/123/service_bindings/456", 200,
 				"delete", null);
+
+		handleRequest("/service_instances/abc", 201, "put",
+				"/instanceBody.json");
+		assertTrue(BrokerServlet.containsInstance("abc"));
+		handleRequest("/service_instances/abc/service_bindings/xyz", 201,
+				"put", "/bindingBody.json");
+		assertTrue(BrokerServlet.containsBinding("xyz"));
+
+		// delete binding
+		handleRequest("/service_instances/abc/service_bindings/xyz", 200,
+				"delete", "/bindingBody.json");
+		assertFalse(BrokerServlet.containsBinding("xyz"));
+		handleRequest("/service_instances/abc/service_bindings/xyz", 410,
+				"delete", "/bindingBody.json");
+
+		// instance
+		handleRequest("/service_instances/abc", 200,
+				"delete", "/bindingBody.json");
+		assertFalse(BrokerServlet.containsInstance("abc"));
+		handleRequest("/service_instances/abc", 410,
+				"delete", "/bindingBody.json");
+
 	}
 
 	private void handleRequest(String pathInfo, int status, String method,
@@ -255,10 +287,12 @@ public class BrokerServletTest {
 			return this.sourceStream;
 		}
 
+		@Override
 		public int read() throws IOException {
 			return this.sourceStream.read();
 		}
 
+		@Override
 		public void close() throws IOException {
 			super.close();
 			this.sourceStream.close();

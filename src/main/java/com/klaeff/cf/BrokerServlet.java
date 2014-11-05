@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.MessageFormat;
 import java.util.Hashtable;
 
 import javax.servlet.ServletException;
@@ -27,7 +28,7 @@ public class BrokerServlet extends HttpServlet {
 	private static Services services = ServicesFactory.create();
 	private static Hashtable<String, ServiceInstance> instanceRegistry = new Hashtable<String, ServiceInstance>();
 	private static Hashtable<String, ServiceBinding> bindingRegistry = new Hashtable<String, ServiceBinding>();
-
+	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
@@ -95,7 +96,11 @@ public class BrokerServlet extends HttpServlet {
 					ServiceInstance si2 = deserializeInstance(instanceBody);
 
 					if (si1.equals(si2)) {
-						resp.getWriter().print("{}");
+						resp.getWriter().print(
+								creatDashboardUrlJson(req.getScheme(),
+										req.getServerName(),
+										req.getServerPort()));
+						;
 						resp.setStatus(200); // ok
 					} else {
 						resp.getWriter().print("{}");
@@ -104,6 +109,10 @@ public class BrokerServlet extends HttpServlet {
 				} else {
 					ServiceInstance si = deserializeInstance(instanceBody);
 					instanceRegistry.put(r.getInstanceId(), si);
+					resp.getWriter().print(
+							creatDashboardUrlJson(req.getScheme(),
+									req.getServerName(), req.getServerPort()));
+					;
 					resp.setStatus(201); // created
 				}
 
@@ -111,22 +120,26 @@ public class BrokerServlet extends HttpServlet {
 			case Binding:
 				String bindingBody = fromStream(req.getInputStream());
 
-				if (bindingRegistry.containsKey(r.getBindingId())) {
-					ServiceBinding sb1 = bindingRegistry.get(r
-							.getBindingId());
-					ServiceBinding sb2 = deserializeBinding(bindingBody);
+				if (instanceRegistry.containsKey(r.getInstanceId())) {
 
-					if (sb1.equals(sb2)) {
-						resp.getWriter().print("{}");
-						resp.setStatus(200); // ok
+					if (bindingRegistry.containsKey(r.getBindingId())) {
+						ServiceBinding sb1 = bindingRegistry.get(r
+								.getBindingId());
+						ServiceBinding sb2 = deserializeBinding(bindingBody);
+
+						if (sb1.equals(sb2)) {
+							resp.setStatus(200); // ok
+						} else {
+							resp.setStatus(409); // conflict
+						}
 					} else {
-						resp.getWriter().print("{}");
-						resp.setStatus(409); // conflict
+						ServiceBinding sb = deserializeBinding(bindingBody);
+						bindingRegistry.put(r.getBindingId(), sb);
+						resp.setStatus(201); // created
 					}
 				} else {
-					ServiceBinding sb = deserializeBinding(bindingBody);
-					bindingRegistry.put(r.getBindingId(), sb);
-					resp.setStatus(201); // created
+					throw new NotFoundException("instance(" + r.getInstanceId()
+							+ ")");
 				}
 
 				break;
@@ -140,6 +153,14 @@ public class BrokerServlet extends HttpServlet {
 			resp.getWriter().print("405 - method not allowed - PUT");
 			resp.setStatus(405);
 		}
+	}
+
+	private static String creatDashboardUrlJson(String scheme, String host,
+			int port) {
+		String url = MessageFormat.format(
+				"{0}://{1}:{2,number,#}/service-broker/", scheme, host, port);
+		String json = "{\n\t\"dashboard_url\": \"" + url + "\"\n}";
+		return json;
 	}
 
 	private static ServiceBinding deserializeBinding(String body) {
@@ -159,10 +180,20 @@ public class BrokerServlet extends HttpServlet {
 
 			switch (r.getResourceType()) {
 			case Instance:
-				resp.setStatus(200);
+				if (instanceRegistry.containsKey(r.getInstanceId())) {
+					instanceRegistry.remove(r.getInstanceId());
+					resp.setStatus(200);					
+				}else{
+					resp.setStatus(410);
+				}
 				break;
 			case Binding:
-				resp.setStatus(200);
+				if (bindingRegistry.containsKey(r.getBindingId())) {
+					bindingRegistry.remove(r.getBindingId());
+					resp.setStatus(200);					
+				}else{
+					resp.setStatus(410);
+				}
 				break;
 			default:
 				throw new MethodNotAllowedException("DELETE");
@@ -234,6 +265,32 @@ public class BrokerServlet extends HttpServlet {
 			out.append(newLine);
 		}
 		return out.toString();
+	}
+
+	public static boolean containsInstance(String instanceId) {
+		return instanceRegistry.containsKey(instanceId);
+	}
+	
+
+	public static boolean containsBinding(String bindingId) {
+		return bindingRegistry.containsKey(bindingId);
+	}
+
+	private static String registryAsJson(Hashtable<?,?> tab) {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		Gson gson = gsonBuilder.setPrettyPrinting().create();
+		String json = gson.toJson(tab);
+		System.out.println(json);
+		
+		return json;
+	}
+
+	public static String bindingRegistryAsJson() {
+		return registryAsJson(bindingRegistry);
+	}
+
+	public static String instanceRegistryAsJson() {
+		return registryAsJson(instanceRegistry);
 	}
 
 }
