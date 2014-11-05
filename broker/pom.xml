@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.klaeff.cf</groupId>
+	<artifactId>service-broker</artifactId>
+	<packaging>war</packaging>
+	<version>1.0-SNAPSHOT</version>
+
+	<parent>
+		<groupId>com.klaeff.cf</groupId>
+		<artifactId>service</artifactId>
+		<version>1.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+	</parent>
+	
+</project>
