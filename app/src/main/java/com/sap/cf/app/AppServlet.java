@@ -31,7 +31,7 @@ public class AppServlet extends HttpServlet {
 		String content = System.getenv(VCAP_SERVICES);
 
 		if (content != null) {
-			response.getWriter().write(content);
+			response.getWriter().write("<html><body><b>VCAP_SERVICES</b><p><textarea cols=\"50\" rows=\"50\">" + content + "</textarea></body></html>");
 		} else {
 			response.getWriter().write(VCAP_SERVICES + " not set");
 		}
