@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.klaeff.cf.service.ServiceBinding;
+import com.klaeff.cf.service.ServiceCredentials;
 import com.klaeff.cf.service.ServiceInstance;
 import com.klaeff.cf.service.ServiceUri;
 import com.klaeff.cf.service.ServiceUriSerializer;
@@ -131,7 +132,10 @@ public class BrokerServlet extends HttpServlet {
 
 						if (sb1.equals(sb2)) {
 							resp.setStatus(200); // ok
-							resp.getWriter().print(bindingCredentials());
+							resp.getWriter().print(
+									bindingCredentials(req.getScheme(),
+											req.getServerName(),
+											req.getServerPort()));
 						} else {
 							errorResponseBody(req, resp, "conflict", 409);
 							resp.setStatus(409); // conflict
@@ -139,7 +143,10 @@ public class BrokerServlet extends HttpServlet {
 					} else {
 						ServiceBinding sb = deserializeBinding(bindingBody);
 						bindingRegistry.put(r.getBindingId(), sb);
-						resp.getWriter().print(bindingCredentials());
+						resp.getWriter().print(
+								bindingCredentials(req.getScheme(),
+										req.getServerName(),
+										req.getServerPort()));
 						resp.setStatus(201); // created
 					}
 				} else {
@@ -161,22 +168,22 @@ public class BrokerServlet extends HttpServlet {
 		}
 	}
 
-	private static String bindingCredentials() {
+	private static String bindingCredentials(String scheme, String host,
+			int port) {
 		GsonBuilder gsonBuilder = new GsonBuilder();
-		Gson gson = gsonBuilder.setPrettyPrinting().create();
+		Gson gson = gsonBuilder.create();
 
-		Hashtable<String, String> cred = new Hashtable<String, String>();
+		ServiceCredentials sc = new ServiceCredentials();
 
-		cred.put("uri", "mysql://mysqluser:pass@mysqlhost:3306/dbname");
-		cred.put("username", "mysqluser");
-		cred.put("password", "pass");
-		cred.put("host", "mysqlhost");
-		cred.put("port", "3306");
-		cred.put("database", "dbname");
+		sc.setUri(MessageFormat.format(
+				"{0}://{1}:{2,number,#}/service-broker/", scheme, host, port));
+		sc.setHost(host);
+		sc.setPort(MessageFormat.format("{0,number,#}", port));
 
-		JsonObject c = new JsonObject();
-		c.addProperty("credentials", gson.toJson(cred));
-		String json = gson.toJson(c);
+		Hashtable<String, Object> wrap = new Hashtable<String, Object>();
+		wrap.put("credentials", sc);
+
+		String json = gson.toJson(wrap);
 
 		return json;
 	}
@@ -323,7 +330,7 @@ public class BrokerServlet extends HttpServlet {
 	private static void errorResponseBody(HttpServletRequest req,
 			HttpServletResponse resp, String msg, int code) throws IOException {
 		GsonBuilder gsonBuilder = new GsonBuilder();
-		Gson gson = gsonBuilder.setPrettyPrinting().create();
+		Gson gson = gsonBuilder.create();
 
 		JsonObject error = new JsonObject();
 		error.addProperty("description", msg + " (" + code + ")");
