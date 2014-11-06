@@ -154,3 +154,18 @@ Cleanup from previous state. Create a service broker and enable service access. 
     
     cf restart cf-service-app
 
+## curl testing
+
+service catalog
+
+    curl http://cf-service-broker.10.244.0.34.xip.io/v2/catalog
+    
+create service instance
+
+    curl http://cf-service-broker.10.244.0.34.xip.io/v2/service_instances/123 -X PUT -d '{ "service_id": "1", "plan_id": "2", "organization_guid": "3", "space_guid": "5" }'
+    curl http://cf-service-broker.10.244.0.34.xip.io/v2/service_instances/123 -X DELETE -d '{ "service_id": "1", "plan_id": "2", "organization_guid": "3", "space_guid": "5" }'
+
+create/delete service binding
+
+    curl http://cf-service-broker.10.244.0.34.xip.io/v2/service_instances/123/service_bindings/abc -X PUT -d '{ "plan_id": "1", "service_id": "2", "app_guid": "3" }'
+    curl http://cf-service-broker.10.244.0.34.xip.io/v2/service_instances/123/service_bindings/abc -X DELETE -d '{ "plan_id": "1", "service_id": "2", "app_guid": "3" }'
