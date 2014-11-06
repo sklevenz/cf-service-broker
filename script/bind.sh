@@ -1,5 +1,7 @@
 #/bin/bash!
 
+cf restart cf-service-broker
+
 cf purge-service-offering "mock service" -f
 cf delete-service-broker mybroker -f
 
